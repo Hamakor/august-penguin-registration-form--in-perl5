@@ -93,6 +93,9 @@ sub _output_stylesheet
 
     $self->_out(<<"EOF")
 body { direction: rtl; text-align: right;}
+.f2 { display: none }
+.reg_form { border: black thin solid; }
+.reg_form td { border: black thin solid; padding: 0.3em; }
 EOF
 }
 
@@ -142,8 +145,9 @@ EOF
         }
         my $caption = $field->{caption}->{he}
             or die "Caption not specified in field No. $idx";
+        my $tr_class = $field->{trap} ? "f2" : "f1";
         my $caption_esc = CGI::escapeHTML($caption);
-        $self->_out(qq{<tr class="f1"><td class="desc">$caption</td>}
+        $self->_out(qq{<tr class="$tr_class"><td class="desc">$caption</td>}
             . qq{<td class="elem"><input name="$id" /></td></tr>}
         );
     }
