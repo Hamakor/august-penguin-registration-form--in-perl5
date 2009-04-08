@@ -147,8 +147,20 @@ EOF
             or die "Caption not specified in field No. $idx";
         my $tr_class = $field->{trap} ? "f2" : "f1";
         my $caption_esc = CGI::escapeHTML($caption);
+        my $form_elem;
+        if ($type eq "line")
+        {
+            $form_elem = qq{<input name="$id" />};
+        }
+        elsif ($type eq "bool")
+        {
+            $form_elem = <<"EOF";
+<input type="radio" name="$id" value="no" /> לא
+<input type="radio" name="$id" value="yes" /> כן
+EOF
+        }
         $self->_out(qq{<tr class="$tr_class"><td class="desc">$caption</td>}
-            . qq{<td class="elem"><input name="$id" /></td></tr>}
+            . qq{<td class="elem">$form_elem</td></tr>}
         );
     }
     continue
