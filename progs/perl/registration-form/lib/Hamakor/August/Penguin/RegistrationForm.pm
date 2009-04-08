@@ -85,12 +85,30 @@ sub _out
     print @_;
 }
 
+sub _output_stylesheet
+{
+    my $self = shift;
+
+    print $self->_cgi->header(-charset => "utf-8", -type => 'text/css');
+
+    $self->_out(<<"EOF")
+body { direction: rtl; text-align: right;}
+EOF
+}
+
 sub run
 {
     my $self = shift;
 
     my $cgi = $self->_cgi();
     my $title = "טופס הרשמה לאוגוסט פינגווין 2009";
+
+    my $path_info = $cgi->path_info();
+
+    if ($path_info eq "/style.css")
+    {
+        return $self->_output_stylesheet();
+    }
 
     print $cgi->header(-charset => "utf-8");
     # TODO : add the year fo the conference
@@ -133,7 +151,7 @@ EOF
     {
         $idx++;
     }
-    $self->_out("</table></form>\n");
+    $self->_out(qq{</table>\n<input type="submit" value="שלח" />\n</form>\n});
     $self->_out("</body>\n</html>\n");
 
     return 0;
