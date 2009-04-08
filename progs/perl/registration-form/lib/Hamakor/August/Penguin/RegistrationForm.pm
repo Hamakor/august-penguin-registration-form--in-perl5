@@ -63,7 +63,7 @@ my @fields =
         type => "line",
         caption =>
         {
-            he => "כתובת (לא למלא(",
+            he => "כתובת (לא למלא)",
         },
         trap => 1,
     },
