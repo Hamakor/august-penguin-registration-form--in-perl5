@@ -52,7 +52,7 @@ my @fields =
     },
     {
         id => "comments",
-        type => "area",
+        type => "textarea",
         caption =>
         {
             he => "הערות:",
@@ -139,10 +139,6 @@ EOF
         my $id = $field->{id}
             or die "Could not find id in the field No. $idx";
         my $type = $field->{type};
-        if ($type !~ m{\A(?:line|bool|area)\z})
-        {
-            die "Unknown type '$type';"
-        }
         my $caption = $field->{caption}->{he}
             or die "Caption not specified in field No. $idx";
         my $tr_class = $field->{trap} ? "f2" : "f1";
@@ -155,10 +151,19 @@ EOF
         elsif ($type eq "bool")
         {
             $form_elem = <<"EOF";
-<input type="radio" name="$id" value="no" /> לא
 <input type="radio" name="$id" value="yes" /> כן
+<input type="radio" name="$id" value="no" /> לא
 EOF
         }
+        elsif ($type eq "textarea")
+        {
+            $form_elem = qq{<textarea name="$id" cols="70"></textarea>};
+        }
+        else
+        {
+            die "Unknown type '$type' in Field No. $idx;"
+        }
+
         $self->_out(qq{<tr class="$tr_class"><td class="desc">$caption</td>}
             . qq{<td class="elem">$form_elem</td></tr>}
         );
