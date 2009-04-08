@@ -155,7 +155,7 @@ EOF
     {
         $idx++;
     }
-    $self->_out(qq{</table>\n<input type="submit" value="שלח" />\n</form>\n});
+    $self->_out(qq{</table>\n<p><input type="submit" value="שלח" /></p>\n</form>\n});
     $self->_out("</body>\n</html>\n");
 
     return 0;
