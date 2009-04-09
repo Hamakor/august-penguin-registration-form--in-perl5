@@ -5,10 +5,14 @@ use warnings;
 
 use base 'File::Dir::Dumper::Base';
 
+use File::Spec;
+
 use CGI;
+use CGI::Session;
 
 __PACKAGE__->mk_accessors(qw(
     _cgi
+    _session
     ));
 
 sub _init
@@ -19,6 +23,26 @@ sub _init
     my $cgi = CGI->new();
 
     $self->_cgi($cgi);
+
+    return;
+}
+
+sub _init_session
+{
+    my $self = shift;
+
+    # TODO : change to a parameter.
+    my $dir = File::Spec->rel2abs("./data/session");
+
+    my $session = CGI::Session->new(
+        "driver:File",
+        $self->_cgi(),
+        {
+            Directory => $dir,
+        },
+    );
+
+    $self->_session($session);
 
     return;
 }
@@ -113,7 +137,9 @@ sub run
         return $self->_output_stylesheet();
     }
 
-    print $cgi->header(-charset => "utf-8");
+    $self->_init_session();
+
+    print $self->_session->header(-charset => "utf-8");
     # TODO : add the year fo the conference
     $self->_out(<<"EOF");
 <?xml version="1.0" encoding="utf-8"?>
@@ -179,4 +205,3 @@ EOF
 }
 
 1;
-
