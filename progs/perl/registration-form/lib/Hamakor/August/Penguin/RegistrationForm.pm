@@ -11,6 +11,8 @@ use CGI;
 use CGI::Session;
 
 __PACKAGE__->mk_accessors(qw(
+    _captcha_bottom
+    _captcha_top
     _cgi
     _session
     ));
@@ -120,7 +122,26 @@ body { direction: rtl; text-align: right;}
 .f2 { display: none }
 .reg_form { border: black thin solid; }
 .reg_form td { border: black thin solid; padding: 0.3em; }
+.math { direction: ltr;}
 EOF
+}
+
+sub _init_captcha
+{
+    my $self = shift;
+
+    open my $rand_fh, "<", "/dev/urandom";
+    my $buffer;
+    read($rand_fh, $buffer, 8);
+    close($rand_fh);
+
+    my ($n1, $n2) = unpack("l2", $buffer);
+    my $top = 50 + $n1 % 50;
+    my $bottom = $n2 % 50;
+    my $result = $top - $bottom;
+    $self->_captcha_top($top);
+    $self->_captcha_bottom($bottom);
+    $self->_session->param("captcha_result", $result);
 }
 
 sub _output_initial_form
@@ -128,6 +149,7 @@ sub _output_initial_form
     my $self = shift;
 
     $self->_init_session();
+    $self->_init_captcha();
 
     print $self->_session->header(-charset => "utf-8");
 
@@ -166,6 +188,15 @@ EOF
         if ($type eq "line")
         {
             $form_elem = qq{<input name="$id" />};
+            if ($field->{captcha})
+            {
+                $form_elem = qq{<div class="math">}
+                    . $self->_captcha_top() . " - "
+                    . $self->_captcha_bottom() . " = "
+                    . $form_elem
+                    . "</div>"
+                    ;
+            }
         }
         elsif ($type eq "bool")
         {
