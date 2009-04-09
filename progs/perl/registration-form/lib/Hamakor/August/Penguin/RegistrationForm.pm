@@ -123,23 +123,16 @@ body { direction: rtl; text-align: right;}
 EOF
 }
 
-sub run
+sub _output_initial_form
 {
     my $self = shift;
-
-    my $cgi = $self->_cgi();
-    my $title = "טופס הרשמה לאוגוסט פינגווין 2009";
-
-    my $path_info = $cgi->path_info();
-
-    if ($path_info eq "/style.css")
-    {
-        return $self->_output_stylesheet();
-    }
 
     $self->_init_session();
 
     print $self->_session->header(-charset => "utf-8");
+
+    my $title = "טופס הרשמה לאוגוסט פינגווין 2009";
+
     # TODO : add the year fo the conference
     $self->_out(<<"EOF");
 <?xml version="1.0" encoding="utf-8"?>
@@ -202,6 +195,26 @@ EOF
     $self->_out("</body>\n</html>\n");
 
     return 0;
+}
+
+sub run
+{
+    my $self = shift;
+
+    my $path_info = $self->_cgi->path_info();
+
+    if ($path_info eq "/style.css")
+    {
+        return $self->_output_stylesheet();
+    }
+    elsif ($path_info eq "/")
+    {
+        return $self->_output_initial_form();
+    }
+    else
+    {
+        die "Unknown path_info!";
+    }
 }
 
 1;
