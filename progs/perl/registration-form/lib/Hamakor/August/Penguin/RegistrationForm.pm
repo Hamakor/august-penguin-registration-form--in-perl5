@@ -363,11 +363,11 @@ EOF
         my $stream = File::Dir::Dumper::Stream::JSON::Writer->new(
             {
                 output => $recording_fh,
-                append => 1,
+                append => (tell($recording_fh) > 0),
             }
         );
 
-        $stream->put($data);
+        $stream->put(+{ type => "registration", details => $data,});
 
         # Closes $recording_fh
         $stream->close();
