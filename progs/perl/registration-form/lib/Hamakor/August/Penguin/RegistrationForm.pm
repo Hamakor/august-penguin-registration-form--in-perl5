@@ -15,6 +15,8 @@ __PACKAGE__->mk_accessors(qw(
     _captcha_top
     _cgi
     _session
+    _output_file_fn
+    _output_lock_fn
     ));
 
 sub _init
@@ -25,6 +27,8 @@ sub _init
     my $cgi = CGI->new();
 
     $self->_cgi($cgi);
+    $self->_output_file_fn($args->{'output_filename'});
+    $self->_output_lock_fn($args->{'output_lock_filename'});
 
     return;
 }
