@@ -5,10 +5,13 @@ use warnings;
 
 use base 'File::Dir::Dumper::Base';
 
+use Fcntl ':flock';
 use File::Spec;
 
 use CGI;
 use CGI::Session;
+
+use File::Dir::Dumper::Stream::JSON::Writer;
 
 __PACKAGE__->mk_accessors(qw(
     _captcha_bottom
@@ -87,6 +90,7 @@ my @fields =
         {
             he => "הערות:",
         },
+        optional => 1,
     },
     {
         id => "address",
@@ -148,18 +152,20 @@ sub _init_captcha
     $self->_session->param("captcha_result", $result);
 }
 
-sub _output_initial_form
+sub _out_html_header
 {
     my $self = shift;
 
-    $self->_init_session();
-    $self->_init_captcha();
-
     print $self->_session->header(-charset => "utf-8");
 
-    my $title = "טופס הרשמה לאוגוסט פינגווין 2009";
+    return;
+}
 
-    # TODO : add the year fo the conference
+sub _out_start_html
+{
+    my $self = shift;
+    my $title = shift;
+
     $self->_out(<<"EOF");
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE
@@ -173,7 +179,23 @@ sub _output_initial_form
 </head>
 <body>
 <h1>$title</h1>
+EOF
 
+    return;
+}
+
+sub _output_initial_form
+{
+    my $self = shift;
+
+    $self->_init_session();
+    $self->_init_captcha();
+
+    $self->_out_html_header();
+
+    $self->_out_start_html("טופס הרשמה לאוגוסט פינגווין 2009");
+
+    $self->_out(<<"EOF");
 <form method="post" action="./submit.cgi">
 <table class="reg_form">
 EOF
@@ -232,6 +254,141 @@ EOF
     return 0;
 }
 
+sub _handle_form_submission
+{
+    my $self = shift;
+
+    my $cgi = $self->_cgi();
+
+    $self->_init_session();
+
+    my $data = +{};
+    my $this_is_spam = 0;
+    my $wrong_captcha = 0;
+    my $missing_fields = 0;
+
+    FIELDS_LOOP:
+    foreach my $field (@fields)
+    {
+        my $id = $field->{'id'};
+        my $val = $cgi->param($id);
+
+        if ($field->{'trap'})
+        {
+            if (length($val))
+            {
+                $this_is_spam = 1;
+                last FIELDS_LOOP;
+            }
+            else
+            {
+                next FIELDS_LOOP;
+            }
+        }
+        elsif ($field->{'captcha'})
+        {
+            if ($val ne $self->_session->param("captcha_result"))
+            {
+                $wrong_captcha = 1;
+                last FIELDS_LOOP;
+            }
+            else
+            {
+                next FIELDS_LOOP;
+            }
+        }
+        elsif (!length($val))
+        {
+            if (! $field->{'optional'})
+            {
+                $missing_fields = 1;
+                last FIELDS_LOOP;
+            }
+        }
+
+        $data->{$id} = $val;
+    }
+
+    $self->_out_html_header();
+
+    if ($missing_fields)
+    {
+        $self->_out_start_html("חסרים שדות");
+        $self->_out(<<"EOF");
+<p>
+חסרים שדות בטופס. אנא חזור אחורה ונסה שוב.
+</p>
+</body>
+</html>
+EOF
+        return 0;
+    }
+    elsif ($this_is_spam)
+    {
+        print STDERR "This Is Spam --- output_file_fn = <<<" . $self->_output_file_fn() . ">>>\n";
+        $self->_out_start_html("הטופס נשלח בהצלחה");
+        $self->_out(<<"EOF");
+<p>
+הטופס נשלח בהצלחה.
+</p>
+</body>
+</html>
+EOF
+        return 0;
+    }
+    elsif ($wrong_captcha)
+    {
+        $self->_out_start_html("התשובה לשאלת האבטחה אינה נכונה");
+        $self->_out(<<"EOF");
+<p>
+התשובה לשאת האבטחה (של חיסור שני מספרים) אינה נכונה. אנא חזור אחרוה ונסה שוב.
+</p>
+</body>
+</html>
+EOF
+        return 0;
+    }
+    else
+    {
+        # Handle the case where everything is OK.
+
+        open my $lock_fh, "<", $self->_output_lock_fn()
+            or die "Cannot open lock file handle";
+        flock ($lock_fh, LOCK_EX());
+
+        print STDERR "output_file_fn = <<<" . $self->_output_file_fn() . ">>>\n";
+        open my $recording_fh, ">>", $self->_output_file_fn()
+            or die "Cannot open recording file handle";
+
+        my $stream = File::Dir::Dumper::Stream::JSON::Writer->new(
+            {
+                output => $recording_fh,
+                append => 1,
+            }
+        );
+
+        $stream->put($data);
+
+        # Closes $recording_fh
+        $stream->close();
+
+        flock($lock_fh, LOCK_UN());
+
+        close($lock_fh);
+
+        $self->_out_start_html("הטופס נשלח בהצלחה");
+        $self->_out(<<"EOF");
+<p>
+הטופס נשלח בהצלחה.
+</p>
+</body>
+</html>
+EOF
+
+        return 0;
+    }
+}
+
 sub run
 {
     my $self = shift;
@@ -241,6 +398,10 @@ sub run
     if ($path_info eq "/style.css")
     {
         return $self->_output_stylesheet();
+    }
+    elsif ($path_info eq "/submit.cgi")
+    {
+        return $self->_handle_form_submission();
     }
     elsif ($path_info eq "/")
     {

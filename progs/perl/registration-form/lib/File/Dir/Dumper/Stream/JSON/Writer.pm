@@ -66,7 +66,10 @@ sub _init
 
     $self->_out($args->{output});
 
-    $self->_init_stream();
+    if (! $args->{append})
+    {
+        $self->_init_stream();
+    }
 
     return;
 }
