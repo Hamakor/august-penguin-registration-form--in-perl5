@@ -14,6 +14,7 @@ exit(
         {
             output_filename => File::Spec->rel2abs("./data/output/out.txt"),
             output_lock_filename => File::Spec->rel2abs("./data/output/lock"),
+            session_dir_path => File::Spec->rel2abs("./data/session"),
         }
     )->run()
 );

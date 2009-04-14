@@ -20,6 +20,7 @@ __PACKAGE__->mk_accessors(qw(
     _session
     _output_file_fn
     _output_lock_fn
+    _session_dir_fn
     ));
 
 sub _init
@@ -32,6 +33,7 @@ sub _init
     $self->_cgi($cgi);
     $self->_output_file_fn($args->{'output_filename'});
     $self->_output_lock_fn($args->{'output_lock_filename'});
+    $self->_session_dir_fn($args->{'session_dir_path'});
 
     return;
 }
@@ -40,14 +42,11 @@ sub _init_session
 {
     my $self = shift;
 
-    # TODO : change to a parameter.
-    my $dir = File::Spec->rel2abs("./data/session");
-
     my $session = CGI::Session->new(
         "driver:File",
         $self->_cgi(),
         {
-            Directory => $dir,
+            Directory => $self->_session_dir_fn(),
         },
     );
 
