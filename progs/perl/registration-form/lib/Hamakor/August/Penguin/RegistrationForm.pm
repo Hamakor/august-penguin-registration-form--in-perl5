@@ -366,7 +366,13 @@ EOF
             }
         );
 
-        $stream->put(+{ type => "registration", details => $data,});
+        $stream->put(
+            +{ 
+                type => "registration",
+                details => $data,
+                timestamp => time(),
+             }
+        );
 
         # Closes $recording_fh
         $stream->close();
