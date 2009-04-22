@@ -165,6 +165,7 @@ sub _out_start_html
     my $self = shift;
     my $title = shift;
 
+    $title .= " (טופס ההרשמה לאגוסט פינגווין 2009)";
     $self->_out(<<"EOF");
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE
@@ -183,7 +184,7 @@ EOF
     return;
 }
 
-sub _output_initial_form
+sub _output_form
 {
     my $self = shift;
 
@@ -192,7 +193,7 @@ sub _output_initial_form
 
     $self->_out_html_header();
 
-    $self->_out_start_html("טופס הרשמה לאוגוסט פינגווין 2009");
+    $self->_out_start_html_and_para(@_);
 
     $self->_out(<<"EOF");
 <form method="post" action="./submit.cgi">
@@ -210,29 +211,50 @@ EOF
         my $tr_class = $field->{trap} ? "f2" : "f1";
         my $caption_esc = CGI::escapeHTML($caption);
         my $form_elem;
+        my $val = $self->_cgi->param($id);
         if ($type eq "line")
         {
-            $form_elem = qq{<input name="$id" />};
             if ($field->{captcha})
             {
                 $form_elem = qq{<div class="math">}
                     . $self->_captcha_top() . " - "
                     . $self->_captcha_bottom() . " = "
-                    . $form_elem
+                    . qq{<input name="$id" />}
                     . "</div>"
+                    ;
+            }
+            else
+            {
+                $form_elem =
+                    qq{<input name="$id" value="}
+                    . CGI::escapeHTML($val)
+                    . qq{"/>}
                     ;
             }
         }
         elsif ($type eq "bool")
         {
-            $form_elem = <<"EOF";
-<input type="radio" name="$id" value="yes" /> כן
-<input type="radio" name="$id" value="no" /> לא
-EOF
+            my @options =
+            (
+                { val => "yes", he => "כן", },
+                { val => "no", he => "לא", },
+            );
+            $form_elem = join("",
+                map
+                {
+                    qq(<input type="radio" name="$id" value="$_->{val}")
+                        . (($_->{val} eq $val) ? qq{ checked="1"} : "")
+                        . " /> $_->{he}\n" 
+                }
+                @options
+            );
         }
         elsif ($type eq "textarea")
         {
-            $form_elem = qq{<textarea name="$id" cols="70"></textarea>};
+            $form_elem = qq{<textarea name="$id" cols="70">} 
+                . CGI::escapeHTML($val)
+                . qq{</textarea>}
+                ;
         }
         else
         {
@@ -251,6 +273,31 @@ EOF
     $self->_out("</body>\n</html>\n");
 
     return 0;
+}
+
+sub _out_end
+{
+    my $self = shift;
+
+    $self->_out("\n</body>\n</html>\n");
+
+    return;
+}
+
+sub _out_start_html_and_para
+{
+    my $self = shift;
+    my $title = shift;
+    my $para = shift;
+
+    $self->_out_start_html($title);
+
+    if (defined($para))
+    {
+        $self->_out("<p>\n$para\n</p>\n");
+    }
+
+    return;
 }
 
 sub _handle_form_submission
@@ -308,44 +355,28 @@ sub _handle_form_submission
         $data->{$id} = $val;
     }
 
-    $self->_out_html_header();
 
     if ($missing_fields)
     {
-        $self->_out_start_html("חסרים שדות");
-        $self->_out(<<"EOF");
-<p>
-חסרים שדות בטופס. אנא חזור אחורה ונסה שוב.
-</p>
-</body>
-</html>
-EOF
-        return 0;
+        $self->_output_form(
+            "חסרים שדות",
+            "חסרים שדות בטופס. אנא שלח שוב.",
+        );
     }
     elsif ($this_is_spam)
     {
+        $self->_out_html_header();
         print STDERR "This Is Spam --- output_file_fn = <<<" . $self->_output_file_fn() . ">>>\n";
-        $self->_out_start_html("הטופס נשלח בהצלחה");
-        $self->_out(<<"EOF");
-<p>
-הטופס נשלח בהצלחה.
-</p>
-</body>
-</html>
-EOF
-        return 0;
+        $self->_out_start_html_and_para("הטופס נשלח בהצלחה",
+            "הטופס נשלח בהצלחה.",
+        );
     }
     elsif ($wrong_captcha)
     {
-        $self->_out_start_html("התשובה לשאלת האבטחה אינה נכונה");
-        $self->_out(<<"EOF");
-<p>
-התשובה לשאלת האבטחה (של חיסור שני מספרים) אינה נכונה. אנא חזור אחרוה ונסה שוב.
-</p>
-</body>
-</html>
-EOF
-        return 0;
+        $self->_output_form(
+            "התשובה לשאלת האבטחה אינה נכונה",
+            "התשובה לשאלת האבטחה (של חיסור שני מספרים) אינה נכונה. אנא מלא את התשובה הנכונה ושלח שוב.",
+        );
     }
     else
     {
@@ -381,17 +412,14 @@ EOF
 
         close($lock_fh);
 
-        $self->_out_start_html("הטופס נשלח בהצלחה");
-        $self->_out(<<"EOF");
-<p>
-הטופס נשלח בהצלחה.
-</p>
-</body>
-</html>
-EOF
-
-        return 0;
+        $self->_out_html_header();
+        $self->_out_start_html_and_para(
+            "הטופס נשלח בהצלחה",
+            "הטופס נשלח בהצלחה.",
+        );
     }
+
+    $self->_out_end();
 }
 
 sub run
@@ -410,7 +438,7 @@ sub run
     }
     elsif ($path_info eq "/")
     {
-        return $self->_output_initial_form();
+        return $self->_output_form("עמוד ראשי");
     }
     else
     {
