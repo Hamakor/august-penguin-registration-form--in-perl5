@@ -184,16 +184,58 @@ EOF
     return;
 }
 
+sub _out_intro
+{
+    my $self = shift;
+
+    $self->_out(<<'EOF');
+<p>
+<strong>רישום מוקדם זה אינו כרוך בכל תשלום.</strong>
+מטרתו היא לסייע למארגנים לאמוד את כמות הבאים. תודה על העזרה!
+</p>
+<p>
+הכנס יתקיים ביום FILL_IN, שעה FILL_IN בבית ציוני אמריקה בתל-אביב, רח' אבן גבירול 26, פינת דניאל פריש 1.
+</p>
+<p>
+<a href="http://www.zoa.co.il/?CategoryID=167" title="arrival" target="blank">להסברי הגעה וקווי אוטובוס</a>
+</p>
+<p>
+לצורך הרשמה לכנס אוגוסט פינגווין 2009, אתם מתבקשים להכניס
+את הפרטים בטופס. לידיעתכם, הכניסה ביום הכנס תהיה בתשלום סימלי
+בסך 30 ש"ח כאשר האנשים הבאים פטורים מתשלום:
+</p>
+<ul>
+<li>
+בעלי כרטיס חבר או ידיד בעמותת "המקור", בתוקף.
+</li>
+<li>
+חבר איגוד האינטרנט הישראלי.
+</li>
+</ul>
+
+EOF
+
+}
 sub _output_form
 {
     my $self = shift;
+    my $args = shift;
+
+    my $title = $args->{'title'};
+    my $notice_para = $args->{'notice_para'};
+    my $is_intro = $args->{'intro'};
 
     $self->_init_session();
     $self->_init_captcha();
 
     $self->_out_html_header();
 
-    $self->_out_start_html_and_para(@_);
+    $self->_out_start_html_and_para($title, $notice_para);
+
+    if ($is_intro)
+    {
+        $self->_out_intro();
+    }
 
     $self->_out(<<"EOF");
 <form method="post" action="./submit.cgi">
@@ -359,8 +401,10 @@ sub _handle_form_submission
     if ($missing_fields)
     {
         $self->_output_form(
-            "חסרים שדות",
-            "חסרים שדות בטופס. אנא שלח שוב.",
+            {
+                title => "חסרים שדות",
+                notice_para => "חסרים שדות בטופס. אנא שלח שוב.",
+            }
         );
     }
     elsif ($this_is_spam)
@@ -374,8 +418,10 @@ sub _handle_form_submission
     elsif ($wrong_captcha)
     {
         $self->_output_form(
-            "התשובה לשאלת האבטחה אינה נכונה",
-            "התשובה לשאלת האבטחה (של חיסור שני מספרים) אינה נכונה. אנא מלא את התשובה הנכונה ושלח שוב.",
+            {
+                title => "התשובה לשאלת האבטחה אינה נכונה",
+                notice_para => "התשובה לשאלת האבטחה (של חיסור שני מספרים) אינה נכונה. אנא מלא את התשובה הנכונה ושלח שוב.",
+            },
         );
     }
     else
@@ -438,7 +484,12 @@ sub run
     }
     elsif ($path_info eq "/")
     {
-        return $self->_output_form("עמוד ראשי");
+        return $self->_output_form(
+            {
+                title => "עמוד ראשי",
+                intro => 1,
+            }
+        );
     }
     else
     {
