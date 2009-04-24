@@ -130,6 +130,7 @@ body { direction: rtl; text-align: right;}
 .reg_form { border: black thin solid; }
 .reg_form td { border: black thin solid; padding: 0.3em; }
 .math { direction: ltr;}
+.notice { border: red thick solid; padding: 0.5em; margin: 0.5em;
 EOF
 }
 
@@ -336,7 +337,7 @@ sub _out_start_html_and_para
 
     if (defined($para))
     {
-        $self->_out("<p>\n$para\n</p>\n");
+        $self->_out(qq{<p class="notice">\n$para\n</p>\n});
     }
 
     return;
