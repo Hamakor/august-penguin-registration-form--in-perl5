@@ -85,7 +85,7 @@ sub _init
 
     $self->_user_cache({});
     $self->_group_cache({});
-    
+
     return;
 }
 

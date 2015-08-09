@@ -114,7 +114,7 @@ my @fields =
 sub _out
 {
     my $self = shift;
-    
+
     print @_;
 }
 
@@ -287,14 +287,14 @@ EOF
                 {
                     qq(<input type="radio" name="$id" value="$_->{val}")
                         . (($_->{val} eq $val) ? qq{ checked="1"} : "")
-                        . " /> $_->{he}\n" 
+                        . " /> $_->{he}\n"
                 }
                 @options
             );
         }
         elsif ($type eq "textarea")
         {
-            $form_elem = qq{<textarea name="$id" cols="70">} 
+            $form_elem = qq{<textarea name="$id" cols="70">}
                 . CGI::escapeHTML($val)
                 . qq{</textarea>}
                 ;
@@ -445,7 +445,7 @@ sub _handle_form_submission
         );
 
         $stream->put(
-            +{ 
+            +{
                 type => "registration",
                 details => $data,
                 timestamp => time(),
