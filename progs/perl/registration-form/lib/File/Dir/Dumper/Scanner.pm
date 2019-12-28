@@ -160,7 +160,7 @@ sub _find_new_common_depth
     }
     continue
     {
-        $depth++;
+        ++$depth;
     }
 
     return $depth;

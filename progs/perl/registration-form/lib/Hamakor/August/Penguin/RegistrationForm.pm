@@ -310,7 +310,7 @@ EOF
     }
     continue
     {
-        $idx++;
+        ++$idx;
     }
     $self->_out(qq{</table>\n<p><input type="submit" value="שלח" /></p>\n</form>\n});
     $self->_out("</body>\n</html>\n");
